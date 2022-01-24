@@ -1,0 +1,9 @@
+{
+  "dc": {
+    "subscribeAll": true
+  },
+  "server" : {
+    "autoConnect": true,
+    "reconnectionShortDelay": 5000
+  }
+}

@@ -1,0 +1,62 @@
+include:
+  - project: devops-group/ci-cd/package-assistant
+    file: package-resource.gitlab-ci.yml
+    ref: 0.8.0
+
+variables:
+  DOCKER_NAME: 470752198308.dkr.ecr.eu-central-1.amazonaws.com/$CI_PROJECT_PATH_SLUG
+  RESOURCE_BASE_VERSION: 1.2.0
+
+stages:
+  - build
+  - package-resource
+  - deploy-app
+  - resetdb
+
+# Stage build
+build-html:
+  cache: {}
+  extends:
+    - .build
+  script:
+    - npm run build:draw
+  artifacts:
+    untracked: false
+    paths:
+      - dist/web
+
+build-node:
+  cache: {}
+  extends:
+    - .build
+  script:
+    - npm run build:node
+  artifacts:
+    untracked: false
+    paths:
+      - dist/node
+
+build-patches:
+  cache: {}
+  extends:
+    - .build
+  script:
+    - npx gulp patches
+    - mkdir dist
+    - mv .dc-init dist/patches
+  artifacts:
+    untracked: false
+    paths:
+      - dist/patches
+
+# Package resources: reference paths of resources to deploy on the cluster.
+package-resource:
+  cache: {}
+  variables:
+    HTML_PATH: dist/web
+    PATCHES_PATH: dist/patches
+    NODE_PATH: dist/node
+  dependencies:
+    - build-html
+    - build-patches
+    - build-node

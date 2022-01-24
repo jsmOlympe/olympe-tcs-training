@@ -1,0 +1,44 @@
+# start backend apps
+version: "3.9"
+services:
+  neo4j:
+    image: "olympeio/neo4j-procedure:1.8.4"
+    container_name: "neo4j"
+    environment:
+      NEO4J_AUTH: "neo4j/password1"
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+    ports:
+      # Offer neo4j console for debugging
+      - 7474:7474
+      - 7687:7687
+    volumes:
+      - ./backend/neo4j-data:/data
+      - ./backend/neo4j-logs:/log
+  orchestrator:
+    image: "olympeio/orchestrator:6.0.1"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    container_name: "orchestrator"
+    ports:
+      - 8080:8080
+    environment:
+      DB_HOSTNAME: neo4j
+      DB_USER: neo4j
+      DB_PASSWORD: password1
+      RABBITMQ_HOST: rabbitmq
+      WAIT_FOR_NEO4J: 120
+  rabbitmq:
+    build:
+      context: ./docker
+      dockerfile: ./rabbitmq.Dockerfile
+    container_name: rabbitmq
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
+      interval: 5s
+      timeout: 10s
+      retries: 50
+    ports:
+      - 15672:15672
+      - 15675:15675
+      - 5672:5672
